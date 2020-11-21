@@ -85,7 +85,7 @@ function Boxes({ width, height }) {
         <meshPhysicalMaterial transparent opacity={0} side={THREE.BackSide} attachArray="material" />
         <meshPhysicalMaterial transparent opacity={0} attachArray="material" />
       </Box>
-      <Plane args={[width, height, 256, 256]} position={[0, 0, -0.5]}>
+      <Plane args={[width, height, 512, 512]} position={[0, 0, -0.5]}>
         <meshPhysicalMaterial
           metalness={0.4}
           roughness={1}
@@ -97,7 +97,7 @@ function Boxes({ width, height }) {
         />
       </Plane>
       <Text
-        position={[0, -0.08, -0.1]}
+        position={[0, -0.05, -0.1]}
         rotation-z={Math.PI / 16}
         fontSize={0.05}
         color="black"

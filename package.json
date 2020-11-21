@@ -13,14 +13,9 @@
     "zustand": "2.2.3"
   },
   "devDependencies": {
-    "customize-cra": "^1.0.0",
-    "customize-cra-react-refresh": "^1.1.0",
-    "glslify-loader": "^2.0.0",
     "husky": "^4.2.5",
     "prettier": "^2.0.5",
-    "pretty-quick": "^2.0.1",
-    "raw-loader": "^4.0.1",
-    "react-app-rewired": "^2.1.6"
+    "pretty-quick": "^2.0.1"
   },
   "scripts": {
     "start": "react-scripts start",
