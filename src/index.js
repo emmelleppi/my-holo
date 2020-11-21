@@ -35,7 +35,7 @@ const cit = [
   'Che ti frega? Ci devi vivere assieme?',
   'So tutto di tutti',
   'Ascolto ancora il s.t. dei Blink a 31 anni',
-  'Avrai ragione te',
+  'Allora avrai ragione te',
   'Dai 11 al libra',
   'Qualcuno per un camparino veloce?'
 ]
@@ -92,18 +92,19 @@ function Boxes({ width, height }) {
           map={map}
           displacementMap={depth}
           displacementBias={0}
-          displacementScale={0.4}
+          displacementScale={0.5}
           fog={false}
         />
       </Plane>
       <Text
-        position={[0, -0.05, -0.1]}
+        position={[0, -0.05, -0.05]}
         rotation-z={Math.PI / 16}
         fontSize={0.05}
         color="black"
         maxWidth={0.6}
         material-toneMapped={false}
         material-fog={false}
+        textAlign="center"
         font="https://fonts.gstatic.com/s/fredokaone/v8/k3kUo8kEI-tA1RRcTZGmTlHGCaE.woff">
         {cit[count]}
       </Text>
@@ -131,7 +132,7 @@ function PlanePortal({ width, height }) {
   const { near, scene, target, portalHalfWidth, portalHalfHeight } = useMemo(() => {
     const target = new THREE.WebGLRenderTarget(1024, 1024)
     const scene = new THREE.Scene()
-    scene.fog = new THREE.Fog(0x000000, 0, 2.5)
+    scene.fog = new THREE.Fog(0x000000, 0, 2)
     scene.background = new THREE.Color(0x000000)
     const near = 0.1
     const portalHalfWidth = width / 2
