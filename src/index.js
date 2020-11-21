@@ -102,6 +102,8 @@ function Boxes({ width, height }) {
         fontSize={0.05}
         color="black"
         maxWidth={0.6}
+        material-toneMapped={false}
+        material-fog={false}
         font="https://fonts.gstatic.com/s/fredokaone/v8/k3kUo8kEI-tA1RRcTZGmTlHGCaE.woff">
         {cit[count]}
       </Text>
@@ -210,7 +212,7 @@ function InteractionManager() {
       position={[0, 0, -0.1]}
       rotation-z={Math.PI / 16}
       fontSize={0.2}
-      color="black"
+      color="white"
       font="https://fonts.gstatic.com/s/fredokaone/v8/k3kUo8kEI-tA1RRcTZGmTlHGCaE.woff">
       Clicca zi
     </Text>
@@ -221,6 +223,7 @@ function App() {
   return (
     <>
       <Canvas concurrent camera={{ position: [0, 0, 1], far: 100, near: 0.1 }}>
+        <color attach="background" args={['black']} />
         <InteractionManager />
       </Canvas>
       <Loader />
