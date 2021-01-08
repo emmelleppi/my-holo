@@ -1,7 +1,6 @@
 import React, {
   useRef,
   useMemo,
-  createRef,
   useState,
   Suspense,
   useCallback,
@@ -9,6 +8,8 @@ import React, {
 } from "react";
 import ReactDOM from "react-dom";
 import * as THREE from "three";
+import { DeviceOrientationControls } from "three/examples/jsm/controls/DeviceOrientationControls";
+import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader";
 import {
   Canvas,
   createPortal,
@@ -16,25 +17,12 @@ import {
   useLoader,
   useThree,
 } from "react-three-fiber";
-import {
-  Plane,
-  Box,
-  useNormalTexture,
-  Text,
-  Loader,
-  useTexture,
-} from "@react-three/drei";
+import { Plane, Box, Text, Loader, useTexture } from "@react-three/drei";
 import clamp from "lodash.clamp";
-import "./styles.css";
-import { DeviceOrientationControls } from "three/examples/jsm/controls/DeviceOrientationControls";
 import usePostprocessing from "./use-post";
-import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader";
 import { useHoloMaterial } from "./holo-material";
-
-const betaRef = createRef(0);
-const gammaRef = createRef(0);
-const rotation = createRef();
-const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+import { betaRef, gammaRef, isMobile, rotation } from "./store";
+import "./styles.css";
 
 function Mouse({ width, height }) {
   const { viewport } = useThree();
@@ -69,16 +57,14 @@ function Mouse({ width, height }) {
 }
 
 function Boxes({ width, height }) {
-  const holo = useTexture("/holo3.jpg");
-  const [normal] = useNormalTexture(75, { repeat: [2, 2] });
-  const [HoloMaterial, targetScene] = useHoloMaterial();
   const materialProps = {
     roughness: 1,
     metalness: 0,
-    clearcoat: 0,
     side: THREE.BackSide,
     color: "black",
   };
+  const holo = useTexture("/holo.jpg");
+  const [HoloMaterial, targetScene] = useHoloMaterial();
   useEffect(() => {
     holo.wrapS = holo.wrapT = THREE.RepeatWrapping;
     holo.repeat.set(1, 4);
@@ -89,25 +75,21 @@ function Boxes({ width, height }) {
         <Plane args={[5, 5]} position={[0, 0, -5]} material-map={holo}></Plane>,
         targetScene
       )}
-      <Box receiveShadow args={[width, height, 1]}>
-        <meshPhysicalMaterial {...materialProps} attachArray="material" />
-        <meshPhysicalMaterial {...materialProps} attachArray="material" />
-        <meshPhysicalMaterial {...materialProps} attachArray="material" />
-        <meshPhysicalMaterial {...materialProps} attachArray="material" />
-        <meshPhysicalMaterial
+      <Box args={[width, height, 1]}>
+        <meshStandardMaterial {...materialProps} attachArray="material" />
+        <meshStandardMaterial {...materialProps} attachArray="material" />
+        <meshStandardMaterial {...materialProps} attachArray="material" />
+        <meshStandardMaterial {...materialProps} attachArray="material" />
+        <meshStandardMaterial
           transparent
           opacity={0}
           side={THREE.BackSide}
           attachArray="material"
         />
-        <meshPhysicalMaterial {...materialProps} attachArray="material" />
+        <meshStandardMaterial {...materialProps} attachArray="material" />
       </Box>
-      <Plane
-        castShadow
-        args={[width, height, 1024, 1024]}
-        position={[0, 0, -0.5]}
-      >
-        <HoloMaterial metalness={0.6} roughness={1} fog={false} />
+      <Plane args={[width, height, 256, 256]} position={[0, 0, -0.55]}>
+        <HoloMaterial metalness={0} roughness={1} fog={false} />
       </Plane>
     </group>
   );
@@ -121,13 +103,14 @@ function DepthCube({ width, height }) {
       </Suspense>
       {!isMobile && <Mouse width={width} height={height} />}
       <ambientLight intensity={1} />
-      <pointLight
-        color="blue"
-        position={[0, -0, -0.15]}
-        intensity={2}
+      <spotLight
+        color="mediumblue"
+        penumbra={1}
+        angle={Math.PI / 2}
+        distance={3}
+        position={[0, -0, 0.5]}
+        intensity={30}
         castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
       />
     </group>
   );
@@ -137,6 +120,7 @@ function PlanePortal({ width, height }) {
   const planeRef = useRef();
   const [camera] = useState(() => new THREE.PerspectiveCamera());
   const { gl } = useThree();
+  const result = useLoader(RGBELoader, "/studio_small_02_1k.hdr");
 
   const {
     near,
@@ -145,10 +129,10 @@ function PlanePortal({ width, height }) {
     portalHalfWidth,
     portalHalfHeight,
   } = useMemo(() => {
-    const target = new THREE.WebGLRenderTarget(1024, 1024);
+    const target = new THREE.WebGLRenderTarget();
     const scene = new THREE.Scene();
     scene.fog = new THREE.Fog(0x000000, 0, 2);
-    scene.background = new THREE.Color("0x000000");
+    scene.background = new THREE.Color("#000000");
     const near = 0.1;
     const portalHalfWidth = width / 2;
     const portalHalfHeight = height / 2;
@@ -156,8 +140,6 @@ function PlanePortal({ width, height }) {
   }, [width, height]);
 
   usePostprocessing(scene, camera);
-
-  const result = useLoader(RGBELoader, "/studio_small_02_1k.hdr");
 
   useEffect(() => {
     const gen = new THREE.PMREMGenerator(gl);
@@ -199,29 +181,22 @@ function PlanePortal({ width, height }) {
     <>
       {createPortal(<DepthCube width={width} height={height} />, scene)}
       <Plane ref={planeRef}>
-        <meshStandardMaterial attach="material" map={target.texture} />
+        <meshBasicMaterial map={target.texture} />
       </Plane>
     </>
   );
 }
 
 function InteractionManager() {
+  const [clicked, setClicked] = useState(false);
   const { aspect } = useThree();
   const { width, height } = useMemo(
-    () =>
-      aspect > 1
-        ? {
-            width: 1,
-            height: 1 / aspect,
-          }
-        : {
-            width: aspect,
-            height: 1,
-          },
-
+    () => ({
+      width: aspect > 1 ? 1 : aspect,
+      height: aspect > 1 ? 1 / aspect : 1,
+    }),
     [aspect]
   );
-  const [clicked, setClicked] = useState(false);
   const handleClick = useCallback(
     function handleClick() {
       setClicked(true);
@@ -260,7 +235,7 @@ function InteractionManager() {
       color="white"
       font="https://fonts.gstatic.com/s/fredokaone/v8/k3kUo8kEI-tA1RRcTZGmTlHGCaE.woff"
     >
-      Clicca zi
+      Click pls
     </Text>
   );
 }
@@ -269,9 +244,9 @@ function App() {
   return (
     <>
       <Canvas
-        shadowMap
         concurrent
-        camera={{ position: [0, 0, 1], far: 100, near: 0.1 }}
+        pixelRatio={[1, 1.5]}
+        camera={{ position: [0, 0, 1], far: 10, near: 0.1 }}
         gl={{ powerPreference: "high-performance" }}
       >
         <color attach="background" args={["black"]} />

@@ -6,10 +6,7 @@ import {
   RenderPass,
   EffectPass,
   BloomEffect,
-  BlendFunction,
-  OverrideMaterialManager,
   ChromaticAberrationEffect,
-  NoiseEffect,
 } from "postprocessing";
 import { usePipeline } from "./store";
 
@@ -18,21 +15,19 @@ function usePostprocessing(scene, camera) {
   const pipeline = usePipeline((s) => s.pipeline);
 
   const [composer] = useMemo(() => {
-    OverrideMaterialManager.workaroundEnabled = true;
     const composer = new EffectComposer(gl, {
       frameBufferType: THREE.HalfFloatType,
       multisampling: 0,
     });
-    const renderPass = new RenderPass(scene, camera);
-
     const BLOOM = new BloomEffect({
       luminanceThreshold: 0.05,
       luminanceSmoothing: 0.01,
     });
     const CHROMATIC_ABERRATION = new ChromaticAberrationEffect({
-      offset: new THREE.Vector2(0.0, 0.002),
+      offset: new THREE.Vector2(0.003, 0.003),
     });
 
+    const renderPass = new RenderPass(scene, camera);
     const effectPass = new EffectPass(camera, BLOOM);
     const effectPass2 = new EffectPass(camera, CHROMATIC_ABERRATION);
 
@@ -47,8 +42,7 @@ function usePostprocessing(scene, camera) {
     composer,
     size,
   ]);
-
-  useFrame((_, delta) => void composer.render(delta), 1);
+  useFrame((_, delta) => void composer.render(delta), -1);
 }
 
 export default usePostprocessing;
