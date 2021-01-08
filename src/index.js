@@ -107,7 +107,7 @@ function Boxes({ width, height }) {
         args={[width, height, 1024, 1024]}
         position={[0, 0, -0.5]}
       >
-        <HoloMaterial metalness={0} roughness={1} fog={false} />
+        <HoloMaterial metalness={0.6} roughness={1} fog={false} />
       </Plane>
     </group>
   );
@@ -124,7 +124,7 @@ function DepthCube({ width, height }) {
       <pointLight
         color="blue"
         position={[0, -0, -0.15]}
-        intensity={4}
+        intensity={2}
         castShadow
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
