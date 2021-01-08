@@ -23,13 +23,13 @@ import {
   Text,
   Loader,
   useTexture,
-  Html,
 } from "@react-three/drei";
 import clamp from "lodash.clamp";
 import "./styles.css";
 import { DeviceOrientationControls } from "three/examples/jsm/controls/DeviceOrientationControls";
 import usePostprocessing from "./use-post";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader";
+import { useHoloMaterial } from "./holo-material";
 
 const betaRef = createRef(0);
 const gammaRef = createRef(0);
@@ -69,20 +69,26 @@ function Mouse({ width, height }) {
 }
 
 function Boxes({ width, height }) {
+  const holo = useTexture("/holo3.jpg");
   const [normal] = useNormalTexture(75, { repeat: [2, 2] });
-  const [map, depth] = useTexture(["/lol.jpg", "/depth.png"]);
+  const [HoloMaterial, targetScene] = useHoloMaterial();
   const materialProps = {
-    normalScale: [0.3, 0.3],
-    normalMap: normal,
-    roughness: 0.3,
-    metalness: 0.2,
-    clearcoat: 0.2,
+    roughness: 1,
+    metalness: 0,
+    clearcoat: 0,
     side: THREE.BackSide,
-    color: "red",
+    color: "black",
   };
-
+  useEffect(() => {
+    holo.wrapS = holo.wrapT = THREE.RepeatWrapping;
+    holo.repeat.set(1, 4);
+  }, [holo]);
   return (
     <group>
+      {createPortal(
+        <Plane args={[5, 5]} position={[0, 0, -5]} material-map={holo}></Plane>,
+        targetScene
+      )}
       <Box receiveShadow args={[width, height, 1]}>
         <meshPhysicalMaterial {...materialProps} attachArray="material" />
         <meshPhysicalMaterial {...materialProps} attachArray="material" />
@@ -101,17 +107,7 @@ function Boxes({ width, height }) {
         args={[width, height, 1024, 1024]}
         position={[0, 0, -0.5]}
       >
-        <meshStandardMaterial
-          metalness={0.7}
-          roughness={0.8}
-          map={map}
-          alphaMap={depth}
-          displacementMap={depth}
-          displacementBias={0}
-          displacementScale={0.4}
-          fog={false}
-          alphaTest={0.5}
-        />
+        <HoloMaterial metalness={0} roughness={1} fog={false} />
       </Plane>
     </group>
   );
@@ -124,17 +120,14 @@ function DepthCube({ width, height }) {
         <Boxes width={width} height={height} />
       </Suspense>
       {!isMobile && <Mouse width={width} height={height} />}
-      <ambientLight intensity={0.5} />
-      <spotLight
-        color="antiquewhite"
-        position={[0.5, 0.5, 0]}
-        intensity={2}
-        angle={Math.PI / 3}
+      <ambientLight intensity={1} />
+      <pointLight
+        color="blue"
+        position={[0, -0, -0.15]}
+        intensity={4}
         castShadow
-        distance={1}
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
-        penumbra={1}
       />
     </group>
   );
@@ -142,7 +135,7 @@ function DepthCube({ width, height }) {
 
 function PlanePortal({ width, height }) {
   const planeRef = useRef();
-  const [camera] = useState(new THREE.PerspectiveCamera());
+  const [camera] = useState(() => new THREE.PerspectiveCamera());
   const { gl } = useThree();
 
   const {

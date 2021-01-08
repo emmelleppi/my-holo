@@ -1,4 +1,4 @@
-import { useFrame, useThree, useLoader } from "react-three-fiber";
+import { useFrame, useThree } from "react-three-fiber";
 import * as THREE from "three";
 import { useEffect, useMemo } from "react";
 import {
@@ -11,9 +11,11 @@ import {
   ChromaticAberrationEffect,
   NoiseEffect,
 } from "postprocessing";
+import { usePipeline } from "./store";
 
 function usePostprocessing(scene, camera) {
   const { gl, size } = useThree();
+  const pipeline = usePipeline((s) => s.pipeline);
 
   const [composer] = useMemo(() => {
     OverrideMaterialManager.workaroundEnabled = true;
@@ -24,29 +26,28 @@ function usePostprocessing(scene, camera) {
     const renderPass = new RenderPass(scene, camera);
 
     const BLOOM = new BloomEffect({
-      luminanceThreshold: 0.9,
-      luminanceSmoothing: 0.5,
+      luminanceThreshold: 0.05,
+      luminanceSmoothing: 0.01,
     });
     const CHROMATIC_ABERRATION = new ChromaticAberrationEffect({
-      offset: new THREE.Vector2(0.001, 0.001),
+      offset: new THREE.Vector2(0.0, 0.002),
     });
-    const NOISE = new NoiseEffect({
-      blendFunction: BlendFunction.COLOR_DODGE,
-    });
-    NOISE.blendMode.opacity.value = 0.05;
 
-    const effectPass = new EffectPass(camera, BLOOM, NOISE);
+    const effectPass = new EffectPass(camera, BLOOM);
     const effectPass2 = new EffectPass(camera, CHROMATIC_ABERRATION);
+
+    pipeline.forEach((x) => composer.addPass(x));
     composer.addPass(renderPass);
     composer.addPass(effectPass);
     composer.addPass(effectPass2);
     return [composer];
-  }, [gl, scene, camera]);
+  }, [gl, scene, camera, pipeline]);
 
   useEffect(() => void composer.setSize(size.width, size.height), [
     composer,
     size,
   ]);
+
   useFrame((_, delta) => void composer.render(delta), 1);
 }
 
